@@ -18,28 +18,33 @@ root = tree.getroot()
 #content = f.read('content.xml')
 #root = etree.fromstring(content)
 
-def fix_path(path):
-    """Return new path."""
-    if path.startswith('../'):
-        fs_path = path[3:]
-    elif path.startswith('/'):
-        fs_path = path
+def link_exists(href):
+    if href.startswith('../'):
+        return os.path.exists(href[3:])
+    elif href.startswith('/'):
+        return os.path.exists(href)
     else:
         # Link within the zip file.  TODO: validate.
-        print '  %r embedded' % path
-        return path
+        print '  embedded %r' % path
+        return True
 
-    if os.path.exists(fs_path):
-        fs_exists = '  %r exists' % path
+def fix_path(href):
+    """Return new path."""
+    
+    if link_exists(href):
+        print '  existing %r' % href
     else:
-        fs_exists = '  %r BROKEN' % path
-    candidate = os.path.basename(fs_path)
-    if os.path.exists(candidate):
-        print fs_exists, '-> %r exists' % candidate
+        print '  BROKEN %r' % href
+    candidate = '../' + os.path.basename(href)
+    if link_exists(candidate):
+        if candidate == href:
+            print '    unchanged.'
+        else:
+            print '    -> existing %r.' % candidate
         return candidate
     else:
-        print fs_exists, 'no candidate found in current dir, LEFT AS IS.'
-        return path
+        print '    no candidate found in current dir, LEFT AS IS.'
+        return href
 
 # root.findall('.//{urn:oasis:names:tc:opendocument:xmlns:drawing:1.0}plugin')
 for elem in root.getiterator():
