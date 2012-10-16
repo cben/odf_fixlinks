@@ -57,12 +57,12 @@ def fix_content(content, directory):
     # Namespace-preserving parsing stolen from
     # http://effbot.org/zone/element-namespaces.htm
     root = None
-    events = ("start", "start-ns")
+    events = ('start', 'start-ns')
     for event, elem in etree.iterparse(StringIO.StringIO(content), events):
-        if event == "start":
+        if event == 'start':
             if root is None:
                 root = elem
-        if event == "start-ns":
+        if event == 'start-ns':
             prefix, uri = elem
             etree._namespace_map[uri] = prefix
     tree = etree.ElementTree(root)
@@ -71,11 +71,11 @@ def fix_content(content, directory):
     
     sio = StringIO.StringIO()
     # TODO: use nice namespace aliases
-    tree.write(sio, encoding='utf8')
+    tree.write(sio, encoding='UTF-8')
     return sio.getvalue()
 
 def fix_odf(fname):
-    output_fname = '%s_fixed%s' % os.path.splitext(fname)
+    output_fname = '%s_fixlinks%s' % os.path.splitext(fname)
     print('reading', fname)
     input_zip = zipfile.ZipFile(fname, 'r')
     output_zip = zipfile.ZipFile(output_fname, 'w')
@@ -91,4 +91,7 @@ if len(sys.argv) == 1:  # devel shortcut
     fix_odf('./test/tmp.odp')
 else:
     for fname in sys.argv[1:]:
-        fix_odf(fname)
+        if os.path.splitext(fname)[0].endswith('_fixlinks'):
+            print('SKIPPING', fname, 'to avoid ..._fixlinks_fixlinks...')
+        else:
+            fix_odf(fname)
