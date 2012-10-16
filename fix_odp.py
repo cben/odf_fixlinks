@@ -11,7 +11,7 @@ except ImportError:
 import os
 import shutil
 import sys
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree  # cElementTree has no _namespace_map?
 import zipfile
 
 def link_exists(href, directory):
@@ -54,10 +54,18 @@ def fix_tree(root, directory):
 
 def fix_content(content, directory):
     """bytes -> bytes"""
-    tree = etree.ElementTree()
-    tree.parse(StringIO.StringIO(content))
-    root = tree.getroot()
-    #root = etree.fromstring(content)
+    # Namespace-preserving parsing stolen from
+    # http://effbot.org/zone/element-namespaces.htm
+    root = None
+    events = ("start", "start-ns")
+    for event, elem in etree.iterparse(StringIO.StringIO(content), events):
+        if event == "start":
+            if root is None:
+                root = elem
+        if event == "start-ns":
+            prefix, uri = elem
+            etree._namespace_map[uri] = prefix
+    tree = etree.ElementTree(root)
 
     fix_tree(root, directory)
     
