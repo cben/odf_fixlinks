@@ -1,5 +1,13 @@
 #!/usr/bin/env python
-import cStringIO as StringIO
+# Python 2 and 3 from same source.
+from __future__ import print_function
+
+try:
+    # TODO: always use io.StringIO - it exists in 2.6 as well, but gives a
+    # ``TypeError: can't write str to text stream``.
+    import cStringIO as StringIO
+except ImportError:
+    import io as StringIO
 import os
 import shutil
 import sys
@@ -13,25 +21,25 @@ def link_exists(href):
         return os.path.exists(href)
     else:
         # Link within the zip file.  TODO: validate.
-        print '  embedded %r' % path
+        print('  embedded %r' % path)
         return True
 
 def fix_path(href):
     """Return new path."""
     
     if link_exists(href):
-        print '  existing %r' % href
+        print('  existing %r' % href)
     else:
-        print '  BROKEN %r' % href
+        print('  BROKEN %r' % href)
     candidate = '../' + os.path.basename(href)
     if link_exists(candidate):
         if candidate == href:
-            print '    unchanged.'
+            print('    unchanged.')
         else:
-            print '    -> existing %r.' % candidate
+            print('    -> existing %r.' % candidate)
         return candidate
     else:
-        print '    no candidate found in current dir, LEFT AS IS.'
+        print('    no candidate found in current dir, LEFT AS IS.')
         return href
 
 def fix_tree(root):
@@ -57,13 +65,13 @@ def fix_content(content):
     fix_tree(root)
     sio = StringIO.StringIO()
     # TODO: use nice namespace aliases
-    tree.write(sio)
+    tree.write(sio, encoding='utf8')
     return sio.getvalue()
 
 if len(sys.argv) == 2:
     FILE = sys.argv[1]
-    print
-    print FILE
+    print()
+    print(FILE)
 else:
     FILE = './test/tmp.odp'
 
@@ -76,4 +84,4 @@ for zinfo in input_zip.filelist:
         s = fix_content(s)
     output_zip.writestr(zinfo, s)
 output_zip.close()
-print 'WROTE', 'fixed_' + os.path.basename(FILE)
+print('WROTE', 'fixed_' + os.path.basename(FILE))
