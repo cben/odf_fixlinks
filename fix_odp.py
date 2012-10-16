@@ -50,38 +50,39 @@ def fix_tree(root):
             for attr in elem.attrib:
                 if attr.endswith('}href'):
                     href = elem.attrib[attr]
-    ##                print etree.tostring(elem)
                     elem.set(attr, fix_path(href))
-    ##                print etree.tostring(elem)
 
 def fix_content(content):
     """bytes -> bytes"""
     tree = etree.ElementTree()
-    tree.parse(input_zip.open('content.xml'))
+    tree.parse(StringIO.StringIO(content))
     root = tree.getroot()
-    #content = f.read('content.xml')
     #root = etree.fromstring(content)
 
     fix_tree(root)
+    
     sio = StringIO.StringIO()
     # TODO: use nice namespace aliases
     tree.write(sio, encoding='utf8')
     return sio.getvalue()
 
-if len(sys.argv) == 2:
-    FILE = sys.argv[1]
-    print()
-    print(FILE)
-else:
-    FILE = './test/tmp.odp'
+def fix_odf(fname):
+    output_fname = 'fixed_' + os.path.basename(fname)
+    print('reading', fname)
+    os.chdir(os.path.dirname(fname))  # TODO: don't rely on cwd!
+    input_zip = zipfile.ZipFile(os.path.basename(fname), 'r')
+    output_zip = zipfile.ZipFile(output_fname, 'w')
+    for zinfo in input_zip.filelist:
+        s = input_zip.read(zinfo.filename)
+        if zinfo.filename == 'content.xml':
+            s = fix_content(s)
+        output_zip.writestr(zinfo, s)
+    output_zip.close()
+    print('WROTE', output_fname)
 
-os.chdir(os.path.dirname(FILE))  # TODO: don't rely on cwd!
-input_zip = zipfile.ZipFile(os.path.basename(FILE), 'r')
-output_zip = zipfile.ZipFile('fixed_' + os.path.basename(FILE), 'w')
-for zinfo in input_zip.filelist:
-    s = input_zip.read(zinfo.filename)
-    if zinfo.filename == 'content.xml':
-        s = fix_content(s)
-    output_zip.writestr(zinfo, s)
-output_zip.close()
-print('WROTE', 'fixed_' + os.path.basename(FILE))
+if len(sys.argv) == 1:
+    fix_odf('./test/tmp.odp')
+else:
+    for fname in sys.argv[1:]:
+        fix_odf(fname)
+    
