@@ -14,35 +14,35 @@ import sys
 import xml.etree.cElementTree as etree
 import zipfile
 
-def link_exists(href):
+def link_exists(href, directory):
     if href.startswith('../'):
-        return os.path.exists(href[3:])
+        return os.path.exists(os.path.join(directory, href[3:]))
     elif href.startswith('/'):
-        return os.path.exists(href)
+        return os.path.exists(os.path.join(directory, href))
     else:
         # Link within the zip file.  TODO: validate.
         print('  embedded %r' % path)
         return True
 
-def fix_path(href):
+def fix_path(href, directory):
     """Return new path."""
     
-    if link_exists(href):
+    if link_exists(href, directory):
         print('  existing %r' % href)
     else:
         print('  BROKEN %r' % href)
     candidate = '../' + os.path.basename(href)
-    if link_exists(candidate):
+    if link_exists(candidate, directory):
         if candidate == href:
             print('    unchanged.')
         else:
             print('    -> existing %r.' % candidate)
         return candidate
     else:
-        print('    no candidate found in current dir, LEFT AS IS.')
+        print('    no candidate found in %r, LEFT AS IS.' % directory)
         return href
 
-def fix_tree(root):
+def fix_tree(root, directory):
     """Mutates an ElementTree in place."""
     # root.findall('.//{urn:oasis:names:tc:opendocument:xmlns:drawing:1.0}plugin')
     for elem in root.getiterator():
@@ -50,16 +50,16 @@ def fix_tree(root):
             for attr in elem.attrib:
                 if attr.endswith('}href'):
                     href = elem.attrib[attr]
-                    elem.set(attr, fix_path(href))
+                    elem.set(attr, fix_path(href, directory))
 
-def fix_content(content):
+def fix_content(content, directory):
     """bytes -> bytes"""
     tree = etree.ElementTree()
     tree.parse(StringIO.StringIO(content))
     root = tree.getroot()
     #root = etree.fromstring(content)
 
-    fix_tree(root)
+    fix_tree(root, directory)
     
     sio = StringIO.StringIO()
     # TODO: use nice namespace aliases
@@ -67,22 +67,20 @@ def fix_content(content):
     return sio.getvalue()
 
 def fix_odf(fname):
-    output_fname = 'fixed_' + os.path.basename(fname)
+    output_fname = '%s_fixed%s' % os.path.splitext(fname)
     print('reading', fname)
-    os.chdir(os.path.dirname(fname))  # TODO: don't rely on cwd!
-    input_zip = zipfile.ZipFile(os.path.basename(fname), 'r')
+    input_zip = zipfile.ZipFile(fname, 'r')
     output_zip = zipfile.ZipFile(output_fname, 'w')
     for zinfo in input_zip.filelist:
         s = input_zip.read(zinfo.filename)
         if zinfo.filename == 'content.xml':
-            s = fix_content(s)
+            s = fix_content(s, os.path.dirname(fname))
         output_zip.writestr(zinfo, s)
     output_zip.close()
     print('WROTE', output_fname)
 
-if len(sys.argv) == 1:
+if len(sys.argv) == 1:  # devel shortcut
     fix_odf('./test/tmp.odp')
 else:
     for fname in sys.argv[1:]:
         fix_odf(fname)
-    
