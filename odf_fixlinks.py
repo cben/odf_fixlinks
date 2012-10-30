@@ -45,7 +45,7 @@ class LinkResolver(object):
                 print('    -> existing %r.' % candidate)
             return candidate
         else:
-            print('    no candidate found in %r, LEFT AS IS.' % directory)
+            print('    no candidate found in %r, LEFT AS IS.' % self.directory)
             return href
 
     def fix_tree(self, root):
