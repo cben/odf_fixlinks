@@ -2,6 +2,8 @@
 # Python 2 and 3 from same source.
 from __future__ import print_function
 
+import urllib
+
 try:
     # TODO: always use io.StringIO - it exists in 2.6 as well, but gives a
     # ``TypeError: can't write str to text stream``.
@@ -21,6 +23,7 @@ class LinkResolver(object):
         self.directory = directory
 
     def link_exists(self, href):
+        href = urllib.unquote(href)
         if href.startswith('../'):
             return os.path.exists(os.path.join(self.directory, href[3:]))
         elif href.startswith('/'):
