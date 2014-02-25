@@ -5,6 +5,7 @@ This script helps with managing *linked* (not embedded) media in LibreOffice/Ope
 
 LibreOffice tends to record *absolute paths* when you insert linked media, which breaks as soon as you move the document and media around your filesystem / to different computers :-(
 This script modifies links to files that it finds in the **same directory as the ODF document** to be relative links.
+It doesn't matter if the original link works, so you can run this after moving the directory with document(s) and media around. 
 
  - It'd be easy to support other conventions, e.g. having media in a subdirectory relative to document.
    Let me know if you want any such support...
