@@ -1,18 +1,10 @@
-#!/usr/bin/env python
-# Python 2 and 3 from same source.
-from __future__ import print_function
+#!/usr/bin/env python3
 
-import urllib
-
-try:
-    # TODO: always use io.StringIO - it exists in 2.6 as well, but gives a
-    # ``TypeError: can't write str to text stream``.
-    import cStringIO as StringIO
-except ImportError:
-    import io as StringIO
+import io
 import os
 import shutil
 import sys
+import urllib.parse
 import xml.etree.ElementTree as etree  # cElementTree has no _namespace_map?
 import zipfile
 
@@ -23,7 +15,7 @@ class LinkResolver(object):
         self.directory = directory
 
     def link_exists(self, href):
-        href = urllib.unquote(href)
+        href = urllib.parse.unquote(href)
         if href.startswith('../'):
             return os.path.exists(os.path.join(self.directory, href[3:]))
         elif href.startswith('/'):
@@ -68,7 +60,7 @@ class LinkResolver(object):
         # http://effbot.org/zone/element-namespaces.htm
         root = None
         events = ('start', 'start-ns')
-        for event, elem in etree.iterparse(StringIO.StringIO(content), events):
+        for event, elem in etree.iterparse(io.BytesIO(content), events):
             if event == 'start':
                 if root is None:
                     root = elem
@@ -79,7 +71,7 @@ class LinkResolver(object):
 
         self.fix_tree(root)
         
-        sio = StringIO.StringIO()
+        sio = io.BytesIO()
         # TODO: use nice namespace aliases
         tree.write(sio, encoding='UTF-8')
         return sio.getvalue()
