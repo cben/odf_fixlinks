@@ -32,16 +32,22 @@ class LinkResolver(object):
             print('  existing %r' % href)
         else:
             print('  BROKEN %r' % href)
-        candidate = '../' + os.path.basename(href)
-        if self.link_exists(candidate):
-            if candidate == href:
-                print('    unchanged.')
-            else:
-                print('    -> existing %r.' % candidate)
-            return candidate
-        else:
-            print('    no candidate found in %r, LEFT AS IS.' % self.directory)
-            return href
+
+        dir1, base1 = os.path.split(href)
+        candidates = ['../' + base1]
+        if dir1:
+            dir2, base2 = os.path.split(dir1)
+            candidates += ['../' + base2 + '/' + base1]
+
+        for candidate in candidates: 
+            if self.link_exists(candidate):
+                if candidate == href:
+                    print('    unchanged.')
+                else:
+                    print('    -> existing %r.' % candidate)
+                return candidate
+        print('    no candidate found in %r, LEFT AS IS.' % self.directory)
+        return href
 
     def fix_tree(self, root):
         """Mutates an ElementTree in place."""
