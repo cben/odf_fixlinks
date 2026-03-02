@@ -5,7 +5,7 @@ import os
 import shutil
 import sys
 import urllib.parse
-import xml.etree.ElementTree as etree  # cElementTree has no _namespace_map?
+import xml.etree.ElementTree as ET
 import zipfile
 
 class LinkResolver(object):
@@ -54,27 +54,10 @@ class LinkResolver(object):
                         href = elem.attrib[attr]
                         elem.set(attr, self.fix_path(href))
 
-    def fix_content(self, content):
-        """bytes -> bytes"""
-        # Namespace-preserving parsing stolen from
-        # http://effbot.org/zone/element-namespaces.htm
-        root = None
-        events = ('start', 'start-ns')
-        for event, elem in etree.iterparse(io.BytesIO(content), events):
-            if event == 'start':
-                if root is None:
-                    root = elem
-            if event == 'start-ns':
-                prefix, uri = elem
-                etree._namespace_map[uri] = prefix
-        tree = etree.ElementTree(root)
-
+    def fix_content(self, content: bytes) -> bytes:
+        root = ET.fromstring(content)
         self.fix_tree(root)
-        
-        sio = io.BytesIO()
-        # TODO: use nice namespace aliases
-        tree.write(sio, encoding='UTF-8')
-        return sio.getvalue()
+        return ET.tostring(root, encoding='UTF-8')
 
 def fix_odf(fname):
     print('reading', fname)
