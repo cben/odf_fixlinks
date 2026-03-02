@@ -40,14 +40,14 @@ class LinkResolver(object):
                 print('    -> existing %r.' % candidate)
             return candidate
         else:
-            print('    no candidate found in %r, LEFT AS IS.' % self.directory)
+            print('    no candidate %r found, LEFT AS IS.' % candidate)
             return href
 
     def fix_tree(self, root):
         """Mutates an ElementTree in place."""
         # root.findall('.//{urn:oasis:names:tc:opendocument:xmlns:drawing:1.0}plugin')
-        # I don't want to assume the namespace will never change.
-        for elem in root.getiterator():
+        for elem in root.iter():
+            # I don't want to assume the namespace will never change.
             if elem.tag.endswith('}plugin'):
                 for attr in elem.attrib:
                     if attr.endswith('}href'):
